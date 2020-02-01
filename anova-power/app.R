@@ -138,17 +138,19 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                             tabPanel("Plot and ANOVA", 
                                      
                                      div(plotOutput("reg.plot", width=fig.width, height=fig.height)),  
-                                     p(strong("The data distributions are summarised using ggplot2 boxplots with whiskers that extend to the most 
-                                     remote point that is not an 'outlier' (beyond 1.5 IQR from the quartiles) otherwise 1.5 x IQR from the quartiles. The raw data is also presented.")),
-                                   #  p(strong("We calculate power using the R power.anova.test function  (for balanced designs). 
-                                    # The balanced one-way analysis of variance power calculation function will only work correctly when the within group SDs the same.")),
-                                    # div( verbatimTextOutput("p1")),
-                                     p(strong("The simulation approach power estimate below takes into account different group sizes and different SDs within groups. 
-                                     Note hitting 'Select a new sample' even when the input sliders 
+                                     p(strong("One realisation of the data distributions is summarised using ggplot2 boxplots with whiskers that extend to the most 
+                                     remote point that is not an 'outlier' (beyond 1.5x  IQR from the quartiles) otherwise 1.5 x IQR from the quartiles. The raw data is also presented.")),
+                                     
+                                   p(strong("The first simulation approach to estimate the power to reject the null hypothesis that all groups
+                                   come from the same population (all group means are equal) with the alternative at least one group mean differs uses an ANOVA analysis that assumes 
+                                   the group variances are equal. This is power therfore assuming the variances are equal:")),
+                                     div( verbatimTextOutput("anova")),
+                                   
+                                     p(strong("Note hitting 'Select a new sample' even when the input sliders 
                                      remain the same generates a new sample based on the range 
                                               sliders so the randomly chosen group means and SDs are unlikely to be the same, hence the power returned is for a new data generating mechanism and is not 
-                                              expected to resemble the previous power estimate.")),
-                                     div( verbatimTextOutput("p2")),
+                                              expected to resemble the previous power estimate. With this next simulation result the variances are not necessarily assumed to be equal. Power:")),
+                                     div( verbatimTextOutput("robust")),
                                      div( verbatimTextOutput("reg.summary"))
                                      
                             ) ,
@@ -328,19 +330,38 @@ server <- shinyServer(function(input, output) {
         power.func <- power.anova.test(groups=top, n=Nj[1], sig.level =alpha,
                          between.var=var(mu), within.var=sigma[1]^2)$power
         
+        # doSim <- function() {                   # function to run one ANOVA on simulated data
+        #     DV <- rnorm(sum(Nj), mus, sigmas)   # data from all three groups
+        #     anova(lm(DV ~ IV))["IV", "Pr(>F)"]  # p-value from ANOVA
+        # }
+        # 
+        # pVals  <- replicate(nsims, doSim())     # run the simulation nsims times
+        # 
+        # power.sim <- sum(pVals < alpha) / nsims      # fraction of significant ANOVAs
+        # 
+        # 
+        # boxplot( rnorm(sum(Nj), mus, sigmas) ~IV   )
+        
+        # lets do the one way in which variances are not necessarily assumed to be equal
         doSim <- function() {                   # function to run one ANOVA on simulated data
             DV <- rnorm(sum(Nj), mus, sigmas)   # data from all three groups
-            anova(lm(DV ~ IV))["IV", "Pr(>F)"]  # p-value from ANOVA
+            pa <-anova(lm(DV ~ IV))["IV", "Pr(>F)"]  # p-value from ANOVA
+            pr <- oneway.test(DV ~ IV , var.equal=FALSE)$p.value
+            return(list(c(pa, pr)))
+            
         }
         
+        
         pVals  <- replicate(nsims, doSim())     # run the simulation nsims times
+        res <- unlist(pVals)
+        pa <- res[c(TRUE, FALSE)] # select even 
+        pr <- res[c(FALSE, TRUE)] # select odd
         
-        power.sim <- sum(pVals < alpha) / nsims      # fraction of significant ANOVAs
         
+        (power1 <- sum(pa < 0.05) / nsims)    # fraction of significant ANOVAs
+        (power2 <- sum(pr < 0.05) / nsims)  
         
-        boxplot( rnorm(sum(Nj), mus, sigmas) ~IV   )
-       
-        return(list(power.func=power.func, power.sim=power.sim)) 
+        return(list(power.func=power1, power.sim=power2))   # sim is the robust one way results
         
     })  
     
@@ -645,13 +666,13 @@ server <- shinyServer(function(input, output) {
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     
     
-    output$p1 <- renderPrint({
+    output$anova<- renderPrint({
         
         return(make.power()$power.func)
         
     })
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
-    output$p2 <- renderPrint({
+    output$robust <- renderPrint({
         
         return(make.power()$power.sim)
         
