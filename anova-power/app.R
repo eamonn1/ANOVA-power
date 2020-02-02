@@ -3,20 +3,20 @@
 # https://stats.stackexchange.com/questions/28876/difference-between-anova-power-simulation-and-power-calculation
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-library(ggplot2)
-library(shiny) 
-library(nlme)
-library(VCA)
-library(shinyWidgets)
-
-options(max.print=1000000)
-fig.width <- 1200
-fig.height <- 450
-library(shinythemes)        # more funky looking apps
-p1 <- function(x) {formatC(x, format="f", digits=1)}
-p2 <- function(x) {formatC(x, format="f", digits=2)}
-is.even <- function(x){ x %% 2 == 0 }
-options(width=100)
+    library(ggplot2)
+    library(shiny) 
+    library(nlme)
+    library(VCA)
+    library(shinyWidgets)
+    
+    options(max.print=1000000)
+    fig.width <- 1200
+    fig.height <- 450
+    library(shinythemes)        # more funky looking apps
+    p1 <- function(x) {formatC(x, format="f", digits=1)}
+    p2 <- function(x) {formatC(x, format="f", digits=2)}
+    is.even <- function(x){ x %% 2 == 0 }
+    options(width=100)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/packages/shinythemes/versions/1.1.2
@@ -30,12 +30,9 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                     
                     #ui <-shinyUI(pageWithSidebar(
                     
-                    h3("Power for one way analysis of variance"),
+                    h3("Power using simulation for one way analysis of variance"),
                     #headerPanel("Power for one way analysis of variance"),
-                    
-                    #sidebarLayout(  #new
-                    # Sidebar with a slider and selection inputs
-                    
+             
                     sidebarPanel( 
                         
                         div(p("If a researcher is interested in evaluating if there is a
@@ -53,19 +50,7 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                                         strong("Select modelling preference "),
                                         choices=c( "base R" , "VCA package" )),
                             
-                            
-                            # sidebarPanel(
-                            #    actionButton("read", "Change"),  # new
-                            #   actionButton("write", "Change"),  #new
-                            #),
-                            
-                            # actionButton("resample", "Simulate a new sample"),
-                            # br(),br(),
-                            # 
-                            # actionButton(inputId='ab1', label="R code here", 
-                            #              icon = icon("th"), 
-                            #              onclick ="window.open('https://raw.githubusercontent.com/eamonn2014/One-way-ANOVA/master/app.R', '_blank')"),
-                            
+                       
                             br(),
                             actionButton(inputId='ab1', label="R code",   icon = icon("th"), 
                                          onclick ="window.open('https://raw.githubusercontent.com/eamonn2014/One-way-ANOVA/master/app.R', '_blank')"),   
@@ -138,11 +123,11 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                             tabPanel("Plot and ANOVA", 
                                      
                                      div(plotOutput("reg.plot", width=fig.width, height=fig.height)),  
-                                     p(strong("One realisation of the data distributions is summarised using ggplot2 boxplots with whiskers that extend to the most 
+                                     p(strong("One realisation of the data distributions is summarised using ggplot2 boxplots (Or the VCA package plot) with whiskers that extend to the most 
                                      remote point that is not an 'outlier' (beyond 1.5x  IQR from the quartiles) otherwise 1.5 x IQR from the quartiles. The raw data is also presented.")),
                                      
                                    p(strong("The first simulation approach to estimate the power to reject the null hypothesis that all groups
-                                   come from the same population (all group means are equal) with the alternative at least one group mean differs uses an ANOVA analysis that assumes 
+                                   come from the same population (all group means are equal) with the alternative at least one group mean differs, uses an ANOVA analysis that assumes 
                                    the group variances are equal. This is power therfore assuming the variances are equal:")),
                                      div( verbatimTextOutput("anova")),
                                    
@@ -168,6 +153,7 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                                      div(plotOutput("residual", width=1200, height=800)) ,
                             ) ,
                             
+                
                             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             tabPanel("List the data", 
                                      
@@ -310,12 +296,12 @@ server <- shinyServer(function(input, output) {
         
         sample <- random.sample()
         
-        top <-        sample$top
-        middle <-     sample$middle
-        lower <-      sample$lower
-        replicates <- sample$replicates
+        top <-        sample$top        # no og groups
+        middle <-     sample$middle     # size of each grp
+        lower <-      sample$lower      # means of each group
+        replicates <- sample$replicates # sds of each group
         alpha <- input$alpha
-        nsims <- input$simulate
+        nsims <- input$simulate         # no of simulations
         
         mu <- lower
         sigma <- replicates
@@ -324,34 +310,16 @@ server <- shinyServer(function(input, output) {
         mus    <- rep(mu, times=Nj)             # for use in rnorm(): vector of mus
         sigmas <- rep(sigma, times=Nj)          # for use in rnorm(): vector of true sds
         IV     <- factor(rep(1:top, times=Nj))    # factor for ANOVA
-       # nsims  <- 4999                          # number of simulations
-        
-        # reference: correct power
-        power.func <- power.anova.test(groups=top, n=Nj[1], sig.level =alpha,
-                         between.var=var(mu), within.var=sigma[1]^2)$power
-        
-        # doSim <- function() {                   # function to run one ANOVA on simulated data
-        #     DV <- rnorm(sum(Nj), mus, sigmas)   # data from all three groups
-        #     anova(lm(DV ~ IV))["IV", "Pr(>F)"]  # p-value from ANOVA
-        # }
-        # 
-        # pVals  <- replicate(nsims, doSim())     # run the simulation nsims times
-        # 
-        # power.sim <- sum(pVals < alpha) / nsims      # fraction of significant ANOVAs
-        # 
-        # 
-        # boxplot( rnorm(sum(Nj), mus, sigmas) ~IV   )
-        
+    
         # lets do the one way in which variances are not necessarily assumed to be equal
-        doSim <- function() {                   # function to run one ANOVA on simulated data
-            DV <- rnorm(sum(Nj), mus, sigmas)   # data from all three groups
+        doSim <- function() {                   # function to run ANOVAs on simulated data
+            DV <- rnorm(sum(Nj), mus, sigmas)   # data from all  groups
             pa <-anova(lm(DV ~ IV))["IV", "Pr(>F)"]  # p-value from ANOVA
             pr <- oneway.test(DV ~ IV , var.equal=FALSE)$p.value
             return(list(c(pa, pr)))
             
         }
-        
-        
+         
         pVals  <- replicate(nsims, doSim())     # run the simulation nsims times
         res <- unlist(pVals)
         pa <- res[c(TRUE, FALSE)] # select even 
@@ -385,6 +353,12 @@ server <- shinyServer(function(input, output) {
                 tryCatch(aov(DV ~IV, df), 
                          error=function(e) e)
             
+            
+             fit.resR <-  
+                tryCatch(oneway.test(DV ~ IV , df, var.equal=FALSE), 
+                          error=function(e) e)
+            # 
+            
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             ###http://stackoverflow.com/questions/8093914
             ###/skip-to-next-value-of-loop-upon-error-in-r-trycatch
@@ -393,7 +367,7 @@ server <- shinyServer(function(input, output) {
                 
                 ff <- fit.res
                 fit.res <-  anova(fit.res) # for the residuals
-                
+               # fit.resR <-  anova(fit.resR) # for the residuals
                 df.b     <- fit.res[['Df']][1] 
                 df.w     <- fit.res[['Df']][2] 
                 ss.b     <- fit.res[['Sum Sq']][1]
@@ -408,6 +382,7 @@ server <- shinyServer(function(input, output) {
                 
                 fit.res <- NULL
                 ff <- NULL
+            #    fit.resR <- NULL
                 
             }
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -439,9 +414,15 @@ server <- shinyServer(function(input, output) {
                 p        <-  NULL
                 
                 
+                # just for residuals for plotting
+                ff <-  
+                    tryCatch(aov(DV ~IV, df), 
+                             error=function(e) e)
+                
             } else  {
                 
                 fit.res <- NULL
+                ff <- NULL
                 
             }
         }
@@ -462,79 +443,13 @@ server <- shinyServer(function(input, output) {
         
         return(list(df.b=df.b, df.w=df.w, ss.b=ss.b, 
                     ss.w=ss.w,ms.b=ms.b,ms.w=ms.w,f=f,p=p,
-                    fit.res=fit.res, fit.summary=fit.summary, ff=ff
+                    fit.res=fit.res, fit.summary=fit.summary, ff=ff #, fit.resR=fit.resR
                     
         ))
         
     })     
     
     # --------------------------------------------------------------------------
-    # Set up the dataset based on the inputs 
-    explain <- reactive({
-        
-        data <- make.regression()
-        
-        df <- data$df
-        
-        #### useful statistics
-        Nj        <- length(df$DV)                # total no of observations
-        Grandmean <- mean(df$DV)                  # grand mean
-        grpn      <- tapply(df$DV, df$IV, length) # group sizes
-        no.grps   <- length(names(table(  df$IV)))# no of groups
-        means     <- tapply(df$DV, df$IV, mean)   # group means
-        vars      <- tapply(df$DV, df$IV, var)    # group variances
-        
-        # simple approiach only for balanced designs
-        # estimate sigma2 using a pooled estimate of the variance of each group
-        ms.wb <-sum(vars)/no.grps
-        
-        # we have another way , if the 4 means do not differ the sample means are normally
-        # distributed with variance sigma2/group size. sigma2/group size can be estimated by the
-        # variance of the smaple means
-        # so group size x the above is another estimate of sigma2
-        
-        ms.bb <- var(means)*unique(grpn)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # more generally, if groups are of different sizes...
-        # within sum of squares
-        ss.w <- sum( (grpn-1) * vars )
-        
-        # within df
-        df.w <- Nj -  no.grps
-        
-        # mean square within
-        ms.w <- ss.w /df.w
-        
-        # between sum of squares
-        ss.b <- sum(grpn * (means - Grandmean)^2)
-        
-        # between df
-        df.b <- no.grps -1
-        
-        # mean square between
-        ms.b <- ss.b /df.b
-        
-        #pvalue
-        pv  <- 1 - pf( ms.b/ms.w, df.b, df.w)
-        
-        A <- c(  df.b,   ss.b, ms.b, ms.b/ms.w, pv , ms.bb)
-        B <- c(  df.w  , ss.w, ms.w, NA,        NA , ms.wb)
-        
-        ANOVA <- NULL
-        ANOVA <- as.data.frame(rbind(A,B))
-        
-        n1 <- c("Df","Sum Sq","Mean Sq","F value","Pr(>F)", "Mean Sq balanced only")
-        n2 <- c("IV","Residuals")
-        
-        colnames(ANOVA) <- n1
-        rownames(ANOVA) <- n2
-        
-        ANOVA <-  as.data.frame(ANOVA[,1:6])
-        ANOVA2 <-  as.data.frame(ANOVA[,1:5])
-        
-        return(list( ANOVA=ANOVA, ANOVA2=ANOVA2)) 
-    })  
-    
     # --------------------------------------------------------------------------
     #---------------------------------------------------------------------------
     # Plot a scatter of the data  
@@ -585,14 +500,7 @@ server <- shinyServer(function(input, output) {
                     JoinLevels=list(var="IV", col=c("lightblue", "cyan", "yellow"), 
                                     lwd=c(2,2,2), 
                                     MeanLine=list(var="DV", col="blue", lwd=2) ,
-                                    
-                                    # Title=list(main=paste("Variability Chart. Truth (estimate): intercept "
-                                    #                       ,input$intercept,"(",fit.regression()$emu,"), top level sd=",
-                                    #            input$a,"(",fit.regression()$etop,")", ",\n middle level sd=",
-                                    #            input$b ,"(",fit.regression()$eday,"), lowest level sd=",
-                                    #            input$c, "(",fit.regression()$erun,") & random error sd=", 
-                                    #            input$d,"(",fit.regression()$esigma,")")),
-                                    
+                                  
                                     # MeanLine=list(var="mid", col="pink", lwd=2),
                                     Points=list(pch=list(var="mid", pch=c(21, 22, 24)), 
                                                 bg =list(var="mid", bg=c("lightblue", "cyan", "yellow")), 
@@ -622,6 +530,7 @@ server <- shinyServer(function(input, output) {
         par(mfrow=c(1,1)) 
         
     })
+  
     
     #---------------------------------------------------------------------------
     # Show the summary for the 
@@ -652,17 +561,17 @@ server <- shinyServer(function(input, output) {
     })
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # the data to print, I wooulf like to reuse this but dont think it is possible? So I add another function to collect the same information below
-    output$byhand <- renderPrint({
-        
-        return(explain()$ANOVA)
-        
-    })
+    # output$byhand <- renderPrint({
+    #     
+    #     return(explain()$ANOVA)
+    #     
+    # })
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    output$byhand2 <- renderPrint({
-        
-        return(explain()$ANOVA2)
-        
-    })
+    # output$byhand2 <- renderPrint({
+    #     
+    #     return(explain()$ANOVA2)
+    #     
+    # })
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     
     
