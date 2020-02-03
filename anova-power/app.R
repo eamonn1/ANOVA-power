@@ -124,14 +124,14 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                                      
                                      div(plotOutput("reg.plot", width=fig.width, height=fig.height)),  
                                      p(strong("One realisation of the data distributions is summarised using ggplot2 boxplots (Or the VCA package plot) with whiskers that extend to the most 
-                                     remote point that is not an 'outlier' (beyond 1.5x  IQR from the quartiles) otherwise 1.5 x IQR from the quartiles. The raw data is also presented.")),
+                                     remote point that is not an 'outlier' (beyond 1.5 x IQR from the quartiles) otherwise 1.5 x IQR from the quartiles. The raw data is also presented.")),
                                      
                                    p(strong("The first simulation approach to estimate the power to reject the null hypothesis that all groups
                                    come from the same population (all group means are equal) with the alternative at least one group mean differs, uses an ANOVA analysis that assumes 
                                    the group variances are equal. This is power therfore assuming the variances are equal:")),
                                      div( verbatimTextOutput("anova")),
                                    
-                                     p(strong("Note hitting 'Select a new sample' even when the input sliders 
+                                     p(strong("Note hitting 'Simulate a new sample' even when the input sliders 
                                      remain the same generates a new sample based on the range 
                                               sliders so the randomly chosen group means and SDs are unlikely to be the same, hence the power returned is for a new data generating mechanism and is not 
                                               expected to resemble the previous power estimate. With this next simulation result the variances are not necessarily assumed to be equal. Power:")),
