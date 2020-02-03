@@ -144,7 +144,7 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             tabPanel("Check assumptions", 
                                      
-                                     p(strong("Is there evidence that the residuals are skewed or otherwise mis shapen
+                                     p(strong("Is there evidence that the residuals are skewed or otherwise misshapen
                 in a way that would influence the results? Note, our sample will be imperfect and our population
                 will not necessarily be 'perfectly normal' either.
                 Here we prefer simple plotting to look for an unspecifiable amount of
