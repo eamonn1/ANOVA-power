@@ -131,7 +131,7 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                                    the group variances are equal. This is power therfore assuming the variances are equal:")),
                                      div( verbatimTextOutput("anova")),
                                    
-                                     p(strong("Note hitting 'Select a new sample' even when the input sliders 
+                                     p(strong("Note hitting 'Simulate a new sample' even when the input sliders 
                                      remain the same generates a new sample based on the range 
                                               sliders so the randomly chosen group means and SDs are unlikely to be the same, hence the power returned is for a new data generating mechanism and is not 
                                               expected to resemble the previous power estimate. With this next simulation result the variances are not necessarily assumed to be equal. Power:")),
