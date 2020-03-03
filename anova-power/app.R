@@ -128,7 +128,7 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                                      
                                    p(strong("The first simulation approach to estimate the power to reject the null hypothesis that all groups
                                    come from the same population (all group means are equal) with the alternative at least one group mean differs, uses an ANOVA analysis that assumes 
-                                   the group variances are equal. This is power therfore assuming the variances are equal:")),
+                                   the group variances are equal. This is power therefore assuming the variances are equal:")),
                                      div( verbatimTextOutput("anova")),
                                    
                                      p(strong("Note hitting 'Simulate a new sample' even when the input sliders 
