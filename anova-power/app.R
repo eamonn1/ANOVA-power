@@ -8,7 +8,7 @@
     library(nlme)
     library(VCA)
     library(shinyWidgets)
-    
+    library(shinyalert)
     options(max.print=1000000)
     fig.width <- 1200
     fig.height <- 450
@@ -21,11 +21,12 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/packages/shinythemes/versions/1.1.2
                 
+                useShinyalert(),  # Set up shinyalert
                 setBackgroundColor(
-                    color = c("#d7d7ce", "#d3ced7"),  
-                    gradient = "radial",
-                    direction = c("bottom", "left")
-                ),                
+                  color = c( "#2171B5", "#F7FBFF"), 
+                  gradient = "linear",
+                  direction = "bottom"
+                ),
                 shinyUI(pageWithSidebar(
                     
                     #ui <-shinyUI(pageWithSidebar(
@@ -51,13 +52,41 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                                         choices=c( "base R" , "VCA package" )),
                             
                        
-                            br(),
-                            actionButton(inputId='ab1', label="R code",   icon = icon("th"), 
-                                         onclick ="window.open('https://raw.githubusercontent.com/eamonn2014/anova-power/master/anova-power/app.R', '_blank')"),   
-                            actionButton("resample", "Simulate a new sample"),
-                            br(), br(),
+                            # 
+                            # tags$style(type="text/css", ".span8 .well { background-color: #00FFFF; }"),
+                            # 
+                            # actionButton(inputId='ab1', label="R code",   icon = icon("th"), 
+                            #              onclick ="window.open('https://raw.githubusercontent.com/eamonn2014/anova-power/master/anova-power/app.R', '_blank')"),   
+                            # actionButton("resample", "Simulate a new sample"),
+                            # 
+                            # tags$head(
+                            #   tags$style(".well {background-color:lightblue}"), ##ABB0B4AF
+                            # ),
+                           #
+                           tags$style(type="text/css", ".span8 .well { background-color: #00FFFF; }"),
+                           
+                           actionButton(inputId='ab1', label="R code",   icon = icon("th"), 
+                                        onclick ="window.open('https://raw.githubusercontent.com/eamonn2014/anova-power/master/anova-power/app.R', '_blank')"),   
+                           actionButton("resample", "Simulate a new sample"),
+                           
+                           br(),  
+                           tags$style(".well {background-color:#b6aebd ;}"), ##ABB0B4AF
+                           
+                           #
                             
-                    
+                             
+                            br(), br(),
+                           
+                           tags$head(
+                             tags$style(HTML('#ab1{background-color:orange}'))
+                           ),
+                           
+                           tags$head(
+                             tags$style(HTML('#resample{background-color:orange}'))
+                           ),
+                           
+                            
+                            
                             div(strong("Select true population parameters"),p(" ")),
                             
                             
@@ -107,9 +136,9 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                         navbarPage(       
                             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
                             tags$style(HTML(" 
-                            .navbar-default .navbar-brand {color: cyan;}
+                          .navbar-default .navbar-brand {color: orange;}
                             .navbar-default .navbar-brand:hover {color: blue;}
-                            .navbar { background-color: lightgrey;}
+                            .navbar { background-color: #b6aebd;}
                             .navbar-default .navbar-nav > li > a {color:black;}
                             .navbar-default .navbar-nav > .active > a,
                             .navbar-default .navbar-nav > .active > a:focus,
@@ -118,7 +147,7 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
                             .navbar-default .navbar-nav > li > a[data-value='t1'] {color: red;background-color: pink;}
                             .navbar-default .navbar-nav > li > a[data-value='t2'] {color: blue;background-color: lightblue;}
                             .navbar-default .navbar-nav > li > a[data-value='t3'] {color: green;background-color: lightgreen;}
-                   ")), 
+                   ")),
                             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end of section to add colour     
                             tabPanel("Plot and ANOVA", 
                                      
@@ -182,6 +211,9 @@ ui <- fluidPage(theme = shinytheme("paper"), #https://www.rdocumentation.org/pac
 
 server <- shinyServer(function(input, output) {
     
+  shinyalert("Welcome! \nExplore ANOVA power!",
+             "It's pretty...pretty...pretty...good",
+             type = "info")
     # --------------------------------------------------------------------------
     # This is where a new sample is instigated only random noise is required to be generated
     random.sample <- reactive({
